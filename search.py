@@ -8,7 +8,7 @@ import os
 import sys
 import getopt
 
-from shared import word_posting_len, normalize, index_width, empty_str
+from shared import word_posting_len, normalize, index_width, empty_str, max_doc_id
 
 # Global variables, dictionary and postings
 dictionary = {}
@@ -48,33 +48,52 @@ def run_search(dict_file, postings_file, queries_file, results_file):
         i = 0
         while i < len(tokens):
             # Things need to implement TODO:
-            # and_nots
             # or words or list
-            # handle and
             # handle or
+            if len(tokens) == 1:
+                if isinstance(tokens[0], str):
+                    tokens[0] = search_single_word(tokens[0])
+                break
             if tokens[i] == 'AND':
                 # Get all things to be dealt with using parallel AND
                 deal_list = tokens[(i-2):i]
-                j = i + 1
-                i = i - 2
+                j = i + 1  # pointer to find AND
+                i = i - 2  # pointer to find operands
                 while tokens[j] == 'AND':
                     j = j + 1
                     i = i - 1
                     deal_list.append(tokens[i])
                 # Open all
-                # res = handle_and(deal_list)
+                tokens[i] = handle_and(deal_list)
+                tokens[(i + 1):] = tokens[j:]
             elif tokens[i] == 'OR':
-                print(1)
-                # Or list
+                # Get all things to be dealt with using parallel OR
+                deal_list = tokens[(i-2):i]
+                j = i + 1  # pointer to find OR
+                i = i - 2  # pointer to find operands
+                while tokens[j] == 'OR':
+                    j = j + 1
+                    i = i - 1
+                    deal_list.append(tokens[i])
+                # Open all
+                # tokens[i] = handle_or(deal_list) # TODO
+                # tokens[(i + 1):] = tokens[j:]
             elif tokens[i] == 'NOT':
-                print(1)
-                # ??
+                # Force open NOT if this is the last operation
+                if len(tokens) == i + 1:
+                    tokens = handle_not(tokens[i - 1])
+                # Tag otherwise
+                else:
+                    tokens[i - 1] = ('NOT', tokens[i - 1])
+                    tokens[i:] = tokens[(i + 1):]
+                    i = i - 1
             i = i + 1
     # print(handle_and_word(['a', 'again']))
     # print(handle_and_word2(['a', 'again']))
     # print(search_single_word('a'))
     # print(search_single_word('again'))
-    print(handle_and_list([[3,4,5,6,7,10,11],[2,3,4,10],[2,3,4,6,7,10,12],[4,10,12]]))
+    # print(handle_and_list([[3,4,5,6,7,10,11],[2,3,4,10],[2,3,4,6,7,10,12],[4,10,12]]))
+    print(handle_and_not_lists(list(range(1,40)),[]))
     df.close()
     pf.close()
     qf.close()
@@ -82,12 +101,104 @@ def run_search(dict_file, postings_file, queries_file, results_file):
     # print(parse(['Hello', 'AND', 'NOT', '(', 'Worlds', 'OR', 'WorDS', 'OR', 'Windows', 'AND', 'MAC', ')']))
 
 
+def classify_operands(operands):
+    """
+    classify the list of operands into the 4 categories: word, list, not word, and not list
+    :param operands: the list of operands to classify
+    :return: dictionary with category as key and list of operands of the category as value
+    """
+    res = {
+        'words': [],
+        'lists': [],
+        'nwords': [],  # not words
+        'nlists': []  # not lists
+    }
+    for operand in operands:
+        if isinstance(operand, str):
+            res['words'].append(operand)
+        elif isinstance(operand, list):
+            res['lists'].append(operand)
+        elif isinstance(operand[1], str):
+            res['nwords'].append(operand)
+        else:
+            res['nlists'].append(operand)
+    return res
+
+
+def handle_not(token):
+    """
+    perform NOT operation
+    :param token: the operand of NOT
+    :return: the resulting list of NOT operation
+    """
+    if type(token) == str:
+        return handle_and_not_words(list(range(1, max_doc_id)), [token])
+    else:
+        return handle_and_not_lists(list(range(1, max_doc_id)), [token])
+
+
+def handle_and(operands):
+    """
+    perform AND over a list of mixed categories of operands
+    :param operands: the given operands of mixed categories
+    :return: the resulting list after performing AND
+    """
+    classified_operands = classify_operands(operands)
+    res = handle_and_word(classified_operands['words'])
+    lists = classified_operands['lists']
+    lists.append(res)
+    res = handle_and_list(lists)
+    res = handle_and_not_words(res, classified_operands['nwords'])
+    res = handle_and_not_lists(res, classified_operands['nlists'])
+    return res
+
+
+def handle_and_not_lists(ls, lists):
+    def get_leading_pointer(i, count):
+        if len(lists[i]) <= count:
+            return -1, i
+        return lists[i][count], i
+    return handle_and_not_shared(ls, lists, get_leading_pointer, lambda i: i, lambda i: len(lists[i]))
+
+
 def handle_and_not_words(ls, words):
-    return handle_and_not_shared(ls, words, lambda i: (ls[i], 'LIST'), get_doc_id, lambda i: words[i],
+    return handle_and_not_shared(ls, words, get_doc_id, lambda i: words[i],
                                  lambda i: dictionary[words[i]])
 
 
-def handle_and_not_shared(ls, words, get_ls_leading_pointer, get_leading_pointer, base, get_len):
+def handle_and_not_shared(ls, words, get_leading_pointer, base, get_len):
+    """
+    perform AND NOT operation: ls AND NOT words
+    :param ls: the given base list that terms are to be removed by NOT
+    :param words: the list of words to exclude
+    :param get_leading_pointer: a binary function that takes in the base form and a count, and returns the docID at the
+    position of count, i.e. count-th docID, in the list associated to the given base form
+    :param base: a mapping of the given index to the base form to store as the keys of pointers
+    :param get_len: a unary integer function that returns the length of the given index in the set
+    :return: the resulting list after performing AND NOT
+    """
+    def get_ls_leading_pointer(index):
+        if len(ls) <= index:
+            return -1, 'LIST'
+        return ls[index], 'LIST'
+
+    def update_next_word(doc_id):
+        next_doc = get_leading_pointer(doc_id[1], pointers[doc_id[1]] + skip_steps[doc_id[1]])
+        while 0 < next_doc[0] < ls_leading_doc[0]:
+            pointers[doc_id[1]] = pointers[doc_id[1]] + skip_steps[doc_id[1]]
+            next_doc = get_leading_pointer(doc_id[1], pointers[doc_id[1]])
+        if next_doc[0] > ls_leading_doc[0]:
+            pointers[doc_id[1]] = pointers[doc_id[1]] + 1
+            next_doc = get_leading_pointer(doc_id[1], pointers[doc_id[1]])
+            while 0 < next_doc[0] < ls_leading_doc[0]:
+                pointers[doc_id[1]] = pointers[doc_id[1]] + 1
+                next_doc = get_leading_pointer(doc_id[1], pointers[doc_id[1]])
+        heappush(leading_docs, next_doc)
+
+    def update_ls():
+        nonlocal ls_leading_doc
+        ls[ls_pointer:] = ls[(ls_pointer + 1):]
+        ls_leading_doc = get_ls_leading_pointer(ls_pointer)
     # If the list of words is empty, return itself
     if not words:
         return ls
@@ -102,6 +213,36 @@ def handle_and_not_shared(ls, words, get_ls_leading_pointer, get_leading_pointer
         pointers[base(i)] = 0
         skip_steps[base(i)] = math.floor(math.sqrt(get_len(i)))
         heappush(leading_docs, get_leading_pointer(base(i), 0))
+    # Process lists
+    while ls_leading_doc[0] > 0 and leading_docs:
+        current_smallest = heappop(leading_docs)
+        while leading_docs and leading_docs[0][0] == current_smallest:
+            heappop(leading_docs)
+        # If get to the end of list, remove and do nothing
+        if current_smallest[0] < 0:
+            continue
+        # Skip through the giving list to locate the current smallest
+        ls_next = get_ls_leading_pointer(ls_pointer + ls_skip_step)
+        while 0 < ls_next[0] < current_smallest[0]:
+            ls_pointer = ls_pointer + ls_skip_step
+            ls_next = get_ls_leading_pointer(ls_pointer + ls_skip_step)
+        # Remove if found
+        if ls_next[0] == current_smallest[0]:
+            ls_pointer = ls_pointer + ls_skip_step
+            update_ls()
+            update_next_word(current_smallest)
+            continue
+        # Search the interval not skipped
+        ls_leading_doc = get_ls_leading_pointer(ls_pointer)
+        while 0 < ls_leading_doc[0] < current_smallest[0]:
+            ls_pointer = ls_pointer + 1
+            ls_leading_doc = get_ls_leading_pointer(ls_pointer)
+        # Remove if found
+        if ls_leading_doc[0] == current_smallest[0]:
+            update_ls()
+        # Push next of the word
+        update_next_word(current_smallest)
+    return ls
 
 
 def handle_and_word(words):
@@ -111,7 +252,7 @@ def handle_and_word(words):
     :return: the list of docIDs in ascending order that (one single document) contains all words in the given list
     """
     return handle_and_shared(words, lambda i: words[i] not in dictionary, lambda i: dictionary[words[i]],
-                             lambda i: words[i], get_doc_id, search_single_word)
+                             lambda i: words[i], get_inv_doc_id, search_single_word)
 
 
 def handle_and_list(lists):
@@ -136,8 +277,8 @@ def handle_and_shared(words, empty_test, get_len, base, get_leading_pointer, han
     making the result of AND empty
     :param get_len: a unary integer function that returns the length of the given index in the set
     :param base: a mapping of the given index to the base form to store as the keys of pointers
-    :param get_leading_pointer: a binary function that takes in the base form and a count, and returns the docID at the
-    position of count, i.e. count-th docID, in the list associated to the given base form
+    :param get_leading_pointer: a binary function that takes in the base form and a count, and returns the inverted
+    docID at the position of count, i.e. count-th docID, in the list associated to the given base form
     :param handle_single: a function that handles the situation when the list is of length 1
     :return: the resulting list of docIDs in ascending order after performing AND
     """
@@ -226,11 +367,11 @@ def search_single_word(word):
     """
     res = []
     pointer = 0
-    doc_id = get_doc_id(word, pointer)
+    doc_id = get_inv_doc_id(word, pointer)
     while doc_id[0] < 0:
         res.append(-doc_id[0])
         pointer = pointer + 1
-        doc_id = get_doc_id(word, pointer)
+        doc_id = get_inv_doc_id(word, pointer)
     return res
 
 
@@ -239,7 +380,18 @@ def get_doc_id(word, count):
     get the docID
     :param word: the word that is searching for
     :param count: the number of documents already processed, i.e. the pointer position
-    :return: the docID at this position
+    :return: a tuple (-docID at the position, word)
+    """
+    inverted = get_inv_doc_id(word, count)
+    return -inverted[0], inverted[1]
+
+
+def get_inv_doc_id(word, count):
+    """
+    get the docID
+    :param word: the word that is searching for
+    :param count: the number of documents already processed, i.e. the pointer position
+    :return: a tuple (-docID at the position, word)
     """
     pf.seek(dict_index[word] + count * index_width)
     s = pf.read(index_width)
