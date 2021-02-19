@@ -2,10 +2,10 @@ import re
 
 from nltk.stem.porter import *
 
-# doc_count = 10000
-doc_count = 10
-# max_doc_id = 15000
-max_doc_id = 12
+doc_count = 10000
+# doc_count = 10
+max_doc_id = 15000
+# max_doc_id = 12
 index_width = 10
 word_posting_len = doc_count * index_width + 1
 # placeholder of empty string

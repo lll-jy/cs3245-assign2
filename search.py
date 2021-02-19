@@ -59,7 +59,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                 deal_list = tokens[(i-2):i]
                 j = i + 1  # pointer to find AND
                 i = i - 2  # pointer to find operands
-                while tokens[j] == 'AND':
+                while j < len(tokens) and tokens[j] == 'AND':
                     j = j + 1
                     i = i - 1
                     deal_list.append(tokens[i])
@@ -71,13 +71,13 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                 deal_list = tokens[(i-2):i]
                 j = i + 1  # pointer to find OR
                 i = i - 2  # pointer to find operands
-                while tokens[j] == 'OR':
+                while j < len(tokens) and tokens[j] == 'OR':
                     j = j + 1
                     i = i - 1
                     deal_list.append(tokens[i])
                 # Open all
-                # tokens[i] = handle_or(deal_list) # TODO
-                # tokens[(i + 1):] = tokens[j:]
+                tokens[i] = handle_or(deal_list)
+                tokens[(i + 1):] = tokens[j:]
             elif tokens[i] == 'NOT':
                 # Force open NOT if this is the last operation
                 if len(tokens) == i + 1:
@@ -88,12 +88,13 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                     tokens[i:] = tokens[(i + 1):]
                     i = i - 1
             i = i + 1
+
     # print(handle_and_word(['a', 'again']))
     # print(handle_and_word2(['a', 'again']))
     # print(search_single_word('a'))
     # print(search_single_word('again'))
     # print(handle_and_list([[3,4,5,6,7,10,11],[2,3,4,10],[2,3,4,6,7,10,12],[4,10,12]]))
-    print(handle_and_not_lists(list(range(1,40)),[]))
+    # print(handle_and_not_lists(list(range(1,40)),[]))
     df.close()
     pf.close()
     qf.close()
@@ -151,6 +152,59 @@ def handle_and(operands):
     res = handle_and_not_words(res, classified_operands['nwords'])
     res = handle_and_not_lists(res, classified_operands['nlists'])
     return res
+
+
+def handle_or(operands):
+    """
+    perform OR over a list of operands
+    :param operands: the given operands
+    :return: the resulting list after performing OR
+    """
+    classified_operands = classify_operands(operands)
+    res = handle_or_word(classified_operands['words'])
+    lists = classified_operands['lists']
+    lists.append(res)
+    res = handle_or_list(lists)
+    return res
+
+
+def handle_or_word(words):
+    return handle_or_shared(words, lambda i: words[i] not in dictionary, lambda i: dictionary[words[i]],
+                            lambda i: words[i], get_inv_doc_id, search_single_word)
+
+
+def handle_or_list(lists):
+    def get_leading_pointer(base, count):
+        if count >= len(lists[base]):
+            return 1, base
+        return -lists[base][count], base
+    return handle_or_shared(lists, lambda i: not lists[i], lambda i: len(lists[i]), lambda i: i,
+                            get_leading_pointer, lambda l: l)
+
+
+def handle_or_shared(words, empty_test, get_len, base, get_leading_pointer, handle_single):
+    # If the list is empty, return empty
+    if not words:
+        return []
+    # If the length of the list is one, return itself
+    if len(words) == 1:
+        return handle_single(words[0])
+
+    pointers = {}
+    for i in range(len(words)):
+        if empty_test(i):
+            del words[i]
+            return handle_or_shared(words, empty_test, get_len, base, get_leading_pointer, handle_single)
+        pointers[(base(i))] = 0
+
+    # Merge lists
+    res = []
+    for i in range(len(words)):
+        posting = handle_single(words[i])
+        for index in posting:
+            if index not in res:
+                res.append(index)
+    return sorted(res)
 
 
 def handle_and_not_lists(ls, lists):
