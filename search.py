@@ -141,11 +141,21 @@ def handle_or(operands):
 
 
 def handle_or_word(words):
+    """
+    perform OR on a list of words
+    :param words: the list of words to perform the operation
+    :return: the list of docIDs in ascending order that (one single document) contains any words in the given list
+    """
     return handle_or_shared(words, lambda i: words[i] not in dictionary, lambda i: dictionary[words[i]],
                             lambda i: words[i], get_inv_doc_id, search_single_word)
 
 
 def handle_or_list(lists):
+    """
+    perform OR on a list of lists
+    :param lists: the list of lists to perform the operation
+    :return: the list of docIDs in ascending order that is the Union of given lists
+    """
     def get_leading_pointer(base, count):
         if count >= len(lists[base]):
             return 1, base
@@ -155,6 +165,18 @@ def handle_or_list(lists):
 
 
 def handle_or_shared(words, empty_test, get_len, base, get_leading_pointer, handle_single):
+    """
+    perform OR operation on a set of words or lists
+    :param words: the set of items to be connected by OR
+    :param empty_test: a unary Boolean function returns true if the given index in the set would return empty, hence
+    making the result of OR empty
+    :param get_len: a unary integer function that returns the length of the given index in the set
+    :param base: a mapping of the given index to the base form to store as the keys of pointers
+    :param get_leading_pointer: a binary function that takes in the base form and a count, and returns the inverted
+    docID at the position of count, i.e. count-th docID, in the list associated to the given base form
+    :param handle_single: a function that handles the situation when the list is of length 1
+    :return: the resulting list of docIDs in ascending order after performing OR
+    """
     # If the list is empty, return empty
     if not words:
         return []
