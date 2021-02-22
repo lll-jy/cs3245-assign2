@@ -40,16 +40,15 @@ def run_search(dict_file, postings_file, queries_file, results_file):
         word_str = word_str[:-1]
         entries = word_str.split(' ')
         dictionary[entries[0]] = int(entries[1])
-        dict_index[entries[0]] = count * word_posting_len
+        dict_index[entries[0]] = int(entries[2])
         count = count + 1
     # Perform searching
-    for query in qf.readlines():
+    # for query in qf.readlines():
+    for query in ['a AND against', '(a OR again) AND against', 'and AND april', 'against AND NOT again']:
+        # 1,5,6; 1,5,6; 1,10; 9,10
         tokens = parse(nltk.word_tokenize(query))
         i = 0
         while i < len(tokens):
-            # Things need to implement TODO:
-            # or words or list
-            # handle or
             if len(tokens) == 1:
                 if isinstance(tokens[0], str):
                     tokens[0] = search_single_word(tokens[0])
@@ -59,7 +58,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                 deal_list = tokens[(i-2):i]
                 j = i + 1  # pointer to find AND
                 i = i - 2  # pointer to find operands
-                while tokens[j] == 'AND':
+                while j < len(tokens) and tokens[j] == 'AND':
                     j = j + 1
                     i = i - 1
                     deal_list.append(tokens[i])
@@ -71,13 +70,13 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                 deal_list = tokens[(i-2):i]
                 j = i + 1  # pointer to find OR
                 i = i - 2  # pointer to find operands
-                while tokens[j] == 'OR':
+                while j < len(tokens) and tokens[j] == 'OR':
                     j = j + 1
                     i = i - 1
                     deal_list.append(tokens[i])
                 # Open all
-                # tokens[i] = handle_or(deal_list) # TODO
-                # tokens[(i + 1):] = tokens[j:]
+                tokens[i] = handle_or(deal_list)
+                tokens[(i + 1):] = tokens[j:]
             elif tokens[i] == 'NOT':
                 # Force open NOT if this is the last operation
                 if len(tokens) == i + 1:
@@ -88,12 +87,14 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                     tokens[i:] = tokens[(i + 1):]
                     i = i - 1
             i = i + 1
+        print(tokens[0])
     # print(handle_and_word(['a', 'again']))
     # print(handle_and_word2(['a', 'again']))
-    # print(search_single_word('a'))
     # print(search_single_word('again'))
     # print(handle_and_list([[3,4,5,6,7,10,11],[2,3,4,10],[2,3,4,6,7,10,12],[4,10,12]]))
-    print(handle_and_not_lists(list(range(1,40)),[]))
+    # print(handle_and_not_lists(list(range(1,40)),[]))
+    # print(handle_and(['a', 'against']))
+    # print(handle_and_list([[1,2,3],[1,2,3,4,5]]))
     df.close()
     pf.close()
     qf.close()
@@ -125,6 +126,59 @@ def classify_operands(operands):
     return res
 
 
+def handle_or(operands):
+    """
+    perform OR over a list of operands
+    :param operands: the given operands
+    :return: the resulting list after performing OR
+    """
+    classified_operands = classify_operands(operands)
+    res = handle_or_word(classified_operands['words'])
+    lists = classified_operands['lists']
+    lists.append(res)
+    res = handle_or_list(lists)
+    return res
+
+
+def handle_or_word(words):
+    return handle_or_shared(words, lambda i: words[i] not in dictionary, lambda i: dictionary[words[i]],
+                            lambda i: words[i], get_inv_doc_id, search_single_word)
+
+
+def handle_or_list(lists):
+    def get_leading_pointer(base, count):
+        if count >= len(lists[base]):
+            return 1, base
+        return -lists[base][count], base
+    return handle_or_shared(lists, lambda i: not lists[i], lambda i: len(lists[i]), lambda i: i,
+                            get_leading_pointer, lambda l: l)
+
+
+def handle_or_shared(words, empty_test, get_len, base, get_leading_pointer, handle_single):
+    # If the list is empty, return empty
+    if not words:
+        return []
+    # If the length of the list is one, return itself
+    if len(words) == 1:
+        return handle_single(words[0])
+
+    pointers = {}
+    for i in range(len(words)):
+        if empty_test(i):
+            del words[i]
+            return handle_or_shared(words, empty_test, get_len, base, get_leading_pointer, handle_single)
+        pointers[(base(i))] = 0
+
+    # Merge lists
+    res = []
+    for i in range(len(words)):
+        posting = handle_single(words[i])
+        for index in posting:
+            if index not in res:
+                res.append(index)
+    return sorted(res)
+
+
 def handle_not(token):
     """
     perform NOT operation
@@ -143,13 +197,19 @@ def handle_and(operands):
     :param operands: the given operands of mixed categories
     :return: the resulting list after performing AND
     """
+    def rid_not(ns):
+        res = []
+        for n in ns:
+            res.append(n[1])
+        return res
+
     classified_operands = classify_operands(operands)
     res = handle_and_word(classified_operands['words'])
     lists = classified_operands['lists']
     lists.append(res)
     res = handle_and_list(lists)
-    res = handle_and_not_words(res, classified_operands['nwords'])
-    res = handle_and_not_lists(res, classified_operands['nlists'])
+    res = handle_and_not_words(res, rid_not(classified_operands['nwords']))
+    res = handle_and_not_lists(res, rid_not(classified_operands['nlists']))
     return res
 
 
@@ -311,9 +371,11 @@ def handle_and_shared(words, empty_test, get_len, base, get_leading_pointer, han
         for word in leading_docs:
             # Break if processed, since leading_docs is changing
             if word[1] in processed_words:
-                break
+                continue
             processed_words.append(word[1])
             current_pointer = pointers[word[1]]
+            if word[0] == 1:
+                return res
             # Continue if the leading doc is the same doc
             if word[0] == current_biggest[0]:
                 leading_docs.remove(word)
@@ -395,7 +457,7 @@ def get_inv_doc_id(word, count):
     """
     pf.seek(dict_index[word] + count * index_width)
     s = pf.read(index_width)
-    if s == empty_str:
+    if s[0] == '\n':
         return 1, word  # positive leading number means this is the end of the word
     return -int(s.strip()), word
 

@@ -52,17 +52,14 @@ def build_index(in_dir, out_dict, out_postings):
                     doc_freq[word] = 0
                 dictionary[word].append(file_index)
                 doc_freq[word] = doc_freq[word] + 1
+    acc_pointer = 0
     with open(out_dict, 'w') as dict_writer:
         with open(out_postings, 'w') as post_writer:
             for word in sorted(doc_freq):
-                dict_writer.write(word + " " + str(doc_freq[word]) + "\n")
+                dict_writer.write(f"{word} {str(doc_freq[word])} {acc_pointer}\n")
+                acc_pointer = acc_pointer + len(dictionary[word]) * index_width + 1
                 for doc in dictionary[word]:
                     post_writer.write(num_to_str(doc))
-                # Add additional spaces so each word in postings takes the same number of characters
-                count = doc_freq[word]
-                while count < doc_count:
-                    post_writer.write(empty_str)
-                    count = count + 1
                 post_writer.write("\n")
 
 
