@@ -1,4 +1,4 @@
-This is the README file for A0194567M's submission
+This is the README file for A0194567M and A0194484R's submission
 
 == Python Version ==
 
@@ -189,13 +189,13 @@ ESSAY.txt: answers to essay questions
 
 Please put a "x" (without the double quotes) into the bracket of the appropriate statement.
 
-[x] I/We, A0194567M, certify that I/we have followed the CS 3245 Information
+[x] I/We, A0194567M, A0194484R, certify that I/we have followed the CS 3245 Information
 Retrieval class guidelines for homework assignments.  In particular, I/we
 expressly vow that I/we have followed the Facebook rule in discussing
 with others in doing the assignment and did not take notes (digital or
 printed) from the discussions.  
 
-[ ] I/We, A0194567M, did not follow the class rules regarding homework
+[ ] I/We, A0194567M, A0194484R, did not follow the class rules regarding homework
 assignment, because of the following reason:
 
 <Please fill in>
