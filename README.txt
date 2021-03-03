@@ -177,7 +177,15 @@ out all invalid document IDs, or such queries are not expected as searching
 for something OR NOT something also does not have pragmatic utility.
 
 
-2.3 Queries and output file format
+2.3 Query and output file format
+
+The Query file contains the search queries, each line in the file
+contains one query. And the file contains no empty lines at the end.
+
+Since the results are also posting lists, the same format as posting file
+is used in the search output file. Each line in the output file is a list
+of document IDs that contains the search result of the queries,
+and sorted in ascending order.
 
 
 == Files included with this submission ==
