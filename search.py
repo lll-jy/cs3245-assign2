@@ -8,9 +8,10 @@ import nltk
 import os
 import sys
 import getopt
-from index import normalize, index_width, max_doc_id
 
 # Global variables, dictionary and postings
+index_width = 6
+max_doc_id = 15000
 dictionary = {}
 dict_index = {}
 pf = None
@@ -564,6 +565,22 @@ def get_operand(parsed_tokens, index):
             return get_operand(parsed_tokens, index) + ['NOT']
         else:
             return parsed_tokens[index:(index+1)]
+
+
+def normalize(src):
+    """
+    :param src: The original word
+    :return: Normalized word with only lower-case alphabetical characters after stemming
+    """
+    # To lower case
+    word = src.lower()
+    # Remove non-alphabetical
+    regex = re.compile('[^a-zA_Z]')
+    word = regex.sub('', word)
+    # Stem words
+    stemmer = PorterStemmer()
+    word = stemmer.stem(word)
+    return word
 
 
 dictionary_file = postings_file = file_of_queries = output_file_of_results = None
