@@ -59,7 +59,7 @@ def build_index(in_dir, out_dict, out_postings):
             dictionary[word].append(file_index)
             doc_freq[word] += 1
 
-        if file_count >= block_size or file_index == max_doc_id - 1:
+        if file_count >= block_size:
             block_count += 1
             temp_dict_path = "./temp_dict" + str(block_count) + ".txt"
             temp_posting_path = "./temp_post" + str(block_count) + ".txt"
@@ -67,6 +67,12 @@ def build_index(in_dir, out_dict, out_postings):
             dictionary = {}
             doc_freq = {}
             file_count = 0
+
+    if len(dictionary) >= 1:  # Construct last block using BSBI
+        block_count += 1
+        temp_dict_path = "./temp_dict" + str(block_count) + ".txt"
+        temp_posting_path = "./temp_post" + str(block_count) + ".txt"
+        bsbi_invert(dictionary, doc_freq, temp_dict_path, temp_posting_path)
 
     merge_block(block_count, out_dict, out_postings)
 
