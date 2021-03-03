@@ -7,10 +7,6 @@ this assignment.
 
 == General Notes about this assignment ==
 
-Give an overview of your program, describe the important algorithms/steps
-in your program, and discuss your experiments in general.  A few paragraphs
-are usually sufficient.
-
 1. Indexing
 
 1.1 Normalized word format
