@@ -2,16 +2,13 @@
 import math
 import re
 from heapq import *
-from nltk.stem.porter import *
 
 import nltk
-import os
 import sys
 import getopt
+from shared import normalize, index_width, max_doc_id
 
 # Global variables, dictionary and postings
-index_width = 6
-max_doc_id = 15000
 dictionary = {}
 dict_index = {}
 pf = None
@@ -487,9 +484,10 @@ def get_inv_doc_id(word, count):
     :param count: the number of documents already processed, i.e. the pointer position
     :return: a tuple (-docID at the position, word)
     """
+    pf.seek(dict_index[word])
     pf.seek(dict_index[word] + count * index_width)
     s = pf.read(index_width)
-    if s[0] == '\n':
+    if s[0] == '\n' or count >= dictionary[word]:
         return 1, word  # positive leading number means this is the end of the word
     return -int(s.strip()), word
 
@@ -567,23 +565,8 @@ def get_operand(parsed_tokens, index):
             return parsed_tokens[index:(index+1)]
 
 
-def normalize(src):
-    """
-    :param src: The original word
-    :return: Normalized word with only lower-case alphabetical characters after stemming
-    """
-    # To lower case
-    word = src.lower()
-    # Remove non-alphabetical
-    regex = re.compile('[^a-zA_Z]')
-    word = regex.sub('', word)
-    # Stem words
-    stemmer = PorterStemmer()
-    word = stemmer.stem(word)
-    return word
-
-
 dictionary_file = postings_file = file_of_queries = output_file_of_results = None
+
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], 'd:p:q:o:')
