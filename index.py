@@ -59,6 +59,8 @@ def build_index(in_dir, out_dict, out_postings):
             dictionary[word].append(file_index)
             doc_freq[word] += 1
 
+        # Divide the files into blocks, each block with block_size files
+        # index every block by applying BSBI
         if file_count >= block_size:
             block_count += 1
             temp_dict_path = "./temp_dict" + str(block_count) + ".txt"
@@ -78,7 +80,14 @@ def build_index(in_dir, out_dict, out_postings):
 
 
 def merge_block(block_count, out_dict, out_postings):
+    """
+    merge block_count number of blocks into one, and store them in specified files
+    :param block_count: the number of blocks to be merged
+    :param out_dict: the path to the final dictionary file
+    :param out_postings: the path to the final postings file
+    """
     if block_count == 1:
+        # If there is only one block, copy the block into output files
         dict_reader = open("./temp_dict1.txt", 'r')
         post_reader = open("./temp_post1.txt", 'r')
         dict_writer = open(out_dict, 'w')
@@ -93,8 +102,10 @@ def merge_block(block_count, out_dict, out_postings):
         os.remove("./temp_dict1.txt")
         os.remove("./temp_post1.txt")
     else:
+        # If there are more than one block, merge the blocks recursively
         intermediate_dict_path = "./inter_dict_till" + str(block_count - 1) + ".txt"
         intermediate_post_path = "./inter_post_till" + str(block_count - 1) + ".txt"
+        # merge the result of the merging of the previous blocks with the current block
         merge_block(block_count - 1, intermediate_dict_path, intermediate_post_path)
         dict1_reader = open(intermediate_dict_path, 'r')
         post1_reader = open(intermediate_post_path, 'r')
@@ -116,6 +127,9 @@ def merge_block(block_count, out_dict, out_postings):
         post_writer = open(out_postings, 'w')
         acc_pointer = 0
         while True:
+            # Merging two blocks
+            # Use two pointers to traverse through the two dictionaries
+            # The merging result is then written into the specified result files
             if idx1 >= len(dictionary1) and idx2 >= len(dictionary2):
                 break
             if idx1 >= len(dictionary1):
@@ -172,6 +186,13 @@ def merge_block(block_count, out_dict, out_postings):
 
 
 def bsbi_invert(dictionary, doc_freq, dict_file, post_file):
+    """
+    Construct inverted index for every block.
+    :param dictionary: the dictionary of the words in the specific block
+    :param doc_freq: the document frequency of each word in the block
+    :param dict_file: the temporary file for storing the dictionary of the words in the block
+    :param post_file: the temporary file for storing the postings of the words in the block
+    """
     acc_pointer = 0
     dict_writer = open(dict_file, 'w')
     post_writer = open(post_file, 'w')
