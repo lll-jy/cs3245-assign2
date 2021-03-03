@@ -29,6 +29,7 @@ def build_index(in_dir, out_dict, out_postings):
     files = os.listdir(in_dir)
     file_index = 0
     block_count = 0
+    file_count = 0
     while file_index < max_doc_id:
         # For each file, tokenize and normalize the words
         file_index = file_index + 1
@@ -41,6 +42,7 @@ def build_index(in_dir, out_dict, out_postings):
         content = reader.read()
         reader.close()
 
+        file_count += 1
         words_in_doc = []
         words = nltk.word_tokenize(content)
         for w in words:
@@ -57,13 +59,14 @@ def build_index(in_dir, out_dict, out_postings):
             dictionary[word].append(file_index)
             doc_freq[word] += 1
 
-        if len(doc_freq) >= block_size or file_index == max_doc_id - 1:
+        if file_count >= block_size or file_index == max_doc_id - 1:
             block_count += 1
             temp_dict_path = "./temp_dict" + str(block_count) + ".txt"
             temp_posting_path = "./temp_post" + str(block_count) + ".txt"
             bsbi_invert(dictionary, doc_freq, temp_dict_path, temp_posting_path)
             dictionary = {}
             doc_freq = {}
+            file_count = 0
 
     merge_block(block_count, out_dict, out_postings)
 
@@ -110,12 +113,20 @@ def merge_block(block_count, out_dict, out_postings):
             if idx1 >= len(dictionary1) and idx2 >= len(dictionary2):
                 break
             if idx1 >= len(dictionary1):
-                dict_writer.write(dict2_reader.read())
+                for line in dictionary2[idx2:]:
+                    tokens2 = line.split(' ')
+                    freq = int(tokens2[1])
+                    dict_writer.write(f"{tokens2[0]} {str(freq)} {acc_pointer}\n")
+                    acc_pointer += freq * index_width + 1
                 for line in post2_reader.readlines():
                     post_writer.write(line)
                 break
             if idx2 >= len(dictionary2):
-                dict_writer.write(dict1_reader.read())
+                for line in dictionary1[idx1:]:
+                    tokens1 = line.split(' ')
+                    freq = int(tokens1[1])
+                    dict_writer.write(f"{tokens1[0]} {str(freq)} {acc_pointer}\n")
+                    acc_pointer += freq * index_width + 1
                 for line in post1_reader.readlines():
                     post_writer.write(line)
                 break
