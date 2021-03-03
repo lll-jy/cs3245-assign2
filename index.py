@@ -7,10 +7,9 @@ import sys
 import getopt
 
 from nltk.stem.porter import *
+from shared import normalize, index_width, max_doc_id
 
 # Global variables
-index_width = 6
-max_doc_id = 15000
 block_size = 1000
 
 
@@ -224,22 +223,6 @@ def num_to_str(n):
         s = s + " "
         l = l + 1
     return s
-
-
-def normalize(src):
-    """
-    :param src: The original word
-    :return: Normalized word with only lower-case alphabetical characters after stemming
-    """
-    # To lower case
-    word = src.lower()
-    # Remove non-alphabetical
-    regex = re.compile('[^a-zA_Z]')
-    word = regex.sub('', word)
-    # Stem words
-    stemmer = PorterStemmer()
-    word = stemmer.stem(word)
-    return word
 
 
 input_directory = output_file_dictionary = output_file_postings = None
