@@ -2,13 +2,13 @@
 import math
 import re
 from heapq import *
+from nltk.stem.porter import *
 
 import nltk
 import os
 import sys
 import getopt
-
-from shared import word_posting_len, normalize, index_width, empty_str, max_doc_id
+from index import normalize, index_width, max_doc_id
 
 # Global variables, dictionary and postings
 dictionary = {}
@@ -26,14 +26,14 @@ def run_search(dict_file, postings_file, queries_file, results_file):
     perform searching on the given queries file and output the results to a file
     """
     print('running search on the queries...')
-    # This is an empty method
-    # Pls implement your code in below
+
     # Open files
     global pf
     df = open(dict_file, 'r')
     pf = open(postings_file, 'r')
     qf = open(queries_file, 'r')
     rf = open(results_file, 'w')
+
     # Load dictionary
     count = 0
     for word_str in df.readlines():
@@ -43,9 +43,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
         dict_index[entries[0]] = int(entries[2])
         count = count + 1
     # Perform searching
-    # for query in qf.readlines():
-    for query in ['a AND against', '(a OR again) AND against', 'and AND april', 'against AND NOT again']:
-        # 1,5,6; 1,5,6; 1,10; 9,10
+    for query in qf.readlines():
         tokens = parse(nltk.word_tokenize(query))
         i = 0
         while i < len(tokens):
@@ -87,19 +85,30 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                     tokens[i:] = tokens[(i + 1):]
                     i = i - 1
             i = i + 1
-        print(tokens[0])
-    # print(handle_and_word(['a', 'again']))
-    # print(handle_and_word2(['a', 'again']))
-    # print(search_single_word('again'))
-    # print(handle_and_list([[3,4,5,6,7,10,11],[2,3,4,10],[2,3,4,6,7,10,12],[4,10,12]]))
-    # print(handle_and_not_lists(list(range(1,40)),[]))
-    # print(handle_and(['a', 'against']))
-    # print(handle_and_list([[1,2,3],[1,2,3,4,5]]))
+        for doc_id in tokens[0]:
+            rf.write(num_to_str(doc_id))
+        rf.write("\n")
+
+    # Close files
     df.close()
     pf.close()
     qf.close()
     rf.close()
-    # print(parse(['Hello', 'AND', 'NOT', '(', 'Worlds', 'OR', 'WorDS', 'OR', 'Windows', 'AND', 'MAC', ')']))
+
+
+def num_to_str(n):
+    """
+    :param n: A number
+    :return: A string of exactly length 10 containing the number with white spaces at the back.
+    This makes sure that each docID takes exactly the same number of characters, making it easier
+    to locate the file pointer
+    """
+    s = str(n)
+    l = len(s)
+    while l < index_width:
+        s = s + " "
+        l = l + 1
+    return s
 
 
 def classify_operands(operands):
@@ -141,11 +150,21 @@ def handle_or(operands):
 
 
 def handle_or_word(words):
+    """
+    perform OR on a list of words
+    :param words: the list of words to perform the operation
+    :return: the list of docIDs in ascending order that (one single document) contains any words in the given list
+    """
     return handle_or_shared(words, lambda i: words[i] not in dictionary, lambda i: dictionary[words[i]],
                             lambda i: words[i], get_inv_doc_id, search_single_word)
 
 
 def handle_or_list(lists):
+    """
+    perform OR on a list of lists
+    :param lists: the list of lists to perform the operation
+    :return: the list of docIDs in ascending order that is the Union of given lists
+    """
     def get_leading_pointer(base, count):
         if count >= len(lists[base]):
             return 1, base
@@ -155,6 +174,18 @@ def handle_or_list(lists):
 
 
 def handle_or_shared(words, empty_test, get_len, base, get_leading_pointer, handle_single):
+    """
+    perform OR operation on a set of words or lists
+    :param words: the set of items to be connected by OR
+    :param empty_test: a unary Boolean function returns true if the given index in the set would return empty, hence
+    making the result of OR empty
+    :param get_len: a unary integer function that returns the length of the given index in the set
+    :param base: a mapping of the given index to the base form to store as the keys of pointers
+    :param get_leading_pointer: a binary function that takes in the base form and a count, and returns the inverted
+    docID at the position of count, i.e. count-th docID, in the list associated to the given base form
+    :param handle_single: a function that handles the situation when the list is of length 1
+    :return: the resulting list of docIDs in ascending order after performing OR
+    """
     # If the list is empty, return empty
     if not words:
         return []
