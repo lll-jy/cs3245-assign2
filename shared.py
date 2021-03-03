@@ -10,6 +10,8 @@ index_width = 6
 word_posting_len = doc_count * index_width + 1
 # placeholder of empty string
 empty_str = "      "
+# the size of block in BSBI
+block_size = 5000000
 
 
 def normalize(src):

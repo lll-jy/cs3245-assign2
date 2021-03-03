@@ -6,7 +6,7 @@ import ssl
 import sys
 import getopt
 
-from shared import index_width, doc_count, max_doc_id, empty_str, normalize
+from shared import index_width, doc_count, max_doc_id, empty_str, normalize, block_size
 
 
 def usage():
@@ -18,49 +18,154 @@ def build_index(in_dir, out_dict, out_postings):
     build index from documents stored in the input directory,
     then output the dictionary file and postings file
     """
-    # This is an empty method
-    # Pls implement your code in below
-    print('indexing...')
+    print("indexing...")
     # Initializations
     dictionary = {}
     doc_freq = {}
+
     # Iterate through each file
     # Not directly using files.sorted() because this sorts
     # alphabetically instead of by index number
     files = os.listdir(in_dir)
     file_index = 0
+    block_count = 0
     while file_index < max_doc_id:
-        # For each file, process
+        # For each file, tokenize and normalize the words
         file_index = file_index + 1
         if not str(file_index) in files:
             continue
         file_name = in_dir + "/" + str(file_index)
-        with open(file_name, 'r') as reader:
-            # Get the unprocessed words
-            content = reader.read()
-            words_in_doc = []
-            words = nltk.word_tokenize(content)
-            for w in words:
-                ws = w.split('/')
-                for word in ws:
-                    word = normalize(word)
-                    if not word == "" and not word in words_in_doc:
-                        words_in_doc.append(word)
-            for word in words_in_doc:
-                if word not in dictionary:
-                    dictionary[word] = []
-                    doc_freq[word] = 0
-                dictionary[word].append(file_index)
-                doc_freq[word] = doc_freq[word] + 1
+
+        reader = open(file_name, 'r')
+        # Get the unprocessed words
+        content = reader.read()
+        reader.close()
+
+        words_in_doc = []
+        words = nltk.word_tokenize(content)
+        for w in words:
+            ws = w.split('/')
+            for word in ws:
+                word = normalize(word)
+                if not word == "" and word not in words_in_doc:
+                    words_in_doc.append(word)
+
+        for word in words_in_doc:
+            if word not in dictionary:
+                dictionary[word] = []
+                doc_freq[word] = 0
+            dictionary[word].append(file_index)
+            doc_freq[word] += 1
+
+        if len(doc_freq) >= block_size or file_index == max_doc_id - 1:
+            block_count += 1
+            temp_dict_path = "./temp_dict" + str(block_count) + ".txt"
+            temp_posting_path = "./temp_post" + str(block_count) + ".txt"
+            bsbi_invert(dictionary, doc_freq, temp_dict_path, temp_posting_path)
+            dictionary = {}
+            doc_freq = {}
+
+    merge_block(block_count, out_dict, out_postings)
+
+
+def merge_block(block_count, out_dict, out_postings):
+    if block_count == 1:
+        dict_reader = open("./temp_dict1.txt", 'r')
+        post_reader = open("./temp_post1.txt", 'r')
+        dict_writer = open(out_dict, 'w')
+        post_writer = open(out_postings, 'w')
+        dict_writer.write(dict_reader.read())
+        for post in post_reader:
+            post_writer.write(post)
+        dict_reader.close()
+        post_reader.close()
+        dict_writer.close()
+        post_writer.close()
+        os.remove("./temp_dict1.txt")
+        os.remove("./temp_post1.txt")
+    else:
+        intermediate_dict_path = "./inter_dict_till" + str(block_count - 1) + ".txt"
+        intermediate_post_path = "./inter_post_till" + str(block_count - 1) + ".txt"
+        merge_block(block_count - 1, intermediate_dict_path, intermediate_post_path)
+        dict1_reader = open(intermediate_dict_path, 'r')
+        post1_reader = open(intermediate_post_path, 'r')
+        current_dict_path = "./temp_dict" + str(block_count) + ".txt"
+        current_post_path = "./temp_post" + str(block_count) + ".txt"
+        dict2_reader = open(current_dict_path, 'r')
+        post2_reader = open(current_post_path, 'r')
+        dictionary1 = []
+        dictionary2 = []
+        idx1 = 0
+        idx2 = 0
+        for line in dict1_reader:
+            dictionary1.append(line[:-1])
+        for line in dict2_reader:
+            dictionary2.append(line[:-1])
+        dict1_reader.close()
+        dict2_reader.close()
+        dict_writer = open(out_dict, 'w')
+        post_writer = open(out_postings, 'w')
+        acc_pointer = 0
+        while True:
+            if idx1 >= len(dictionary1) and idx2 >= len(dictionary2):
+                break
+            if idx1 >= len(dictionary1):
+                dict_writer.write(dict2_reader.read())
+                for line in post2_reader.readlines():
+                    post_writer.write(line)
+                break
+            if idx2 >= len(dictionary2):
+                dict_writer.write(dict1_reader.read())
+                for line in post1_reader.readlines():
+                    post_writer.write(line)
+                break
+            tokens1 = dictionary1[idx1].split(' ')
+            tokens2 = dictionary2[idx2].split(' ')
+            if tokens1[0] == tokens2[0]:
+                word = tokens1[0]
+                freq = int(tokens1[1]) + int(tokens2[1])
+                posting = post1_reader.readline()[:-1] + post2_reader.readline()[:-1]
+                dict_writer.write(f"{word} {str(freq)} {acc_pointer}\n")
+                acc_pointer += freq * index_width + 1
+                post_writer.write(posting + "\n")
+                idx1 += 1
+                idx2 += 1
+            elif tokens1[0] < tokens2[0]:
+                word = tokens1[0]
+                freq = int(tokens1[1])
+                dict_writer.write(f"{word} {str(freq)} {acc_pointer}\n")
+                acc_pointer += freq * index_width + 1
+                post_writer.write(post1_reader.readline())
+                idx1 += 1
+            else:
+                word = tokens2[0]
+                freq = int(tokens2[1])
+                dict_writer.write(f"{word} {str(freq)} {acc_pointer}\n")
+                acc_pointer += freq * index_width + 1
+                post_writer.write(post2_reader.readline())
+                idx2 += 1
+        post1_reader.close()
+        post2_reader.close()
+        dict_writer.close()
+        post_writer.close()
+        os.remove(intermediate_dict_path)
+        os.remove(intermediate_post_path)
+        os.remove(current_dict_path)
+        os.remove(current_post_path)
+
+
+def bsbi_invert(dictionary, doc_freq, dict_file, post_file):
     acc_pointer = 0
-    with open(out_dict, 'w') as dict_writer:
-        with open(out_postings, 'w') as post_writer:
-            for word in sorted(doc_freq):
-                dict_writer.write(f"{word} {str(doc_freq[word])} {acc_pointer}\n")
-                acc_pointer = acc_pointer + len(dictionary[word]) * index_width + 1
-                for doc in dictionary[word]:
-                    post_writer.write(num_to_str(doc))
-                post_writer.write("\n")
+    dict_writer = open(dict_file, 'w')
+    post_writer = open(post_file, 'w')
+    for word in sorted(doc_freq):
+        dict_writer.write(f"{word} {str(doc_freq[word])} {acc_pointer}\n")
+        acc_pointer += len(dictionary[word]) * index_width + 1
+        for doc in dictionary[word]:
+            post_writer.write(num_to_str(doc))
+        post_writer.write("\n")
+    dict_writer.close()
+    post_writer.close()
 
 
 def num_to_str(n):
