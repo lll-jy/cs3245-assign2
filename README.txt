@@ -192,6 +192,7 @@ and sorted in ascending order.
 
 index.py: required source code of indexing
 search.py: required source code of searching
+shared.py: shared code for index.py and search.py
 dictionary.txt: generated dictionary using index.py with data in Reuters
 postings.txt: generated postings list using index.py with data in Reuters
 README.txt: this file
@@ -205,7 +206,7 @@ Please put a "x" (without the double quotes) into the bracket of the appropriate
 Retrieval class guidelines for homework assignments.  In particular, I/we
 expressly vow that I/we have followed the Facebook rule in discussing
 with others in doing the assignment and did not take notes (digital or
-printed) from the discussions.  
+printed) from the discussions.
 
 [ ] I/We, A0194567M, A0194484R, did not follow the class rules regarding homework
 assignment, because of the following reason:
