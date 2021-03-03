@@ -182,13 +182,8 @@ for something OR NOT something also does not have pragmatic utility.
 
 == Files included with this submission ==
 
-List the files in your submission here and provide a short 1 line
-description of each file.  Make sure your submission's files are named
-and formatted correctly.
-
 index.py: required source code of indexing
 search.py: required source code of searching
-shared.py: shared functions and values of the previous code files
 dictionary.txt: generated dictionary using index.py with data in Reuters
 postings.txt: generated postings list using index.py with data in Reuters
 README.txt: this file

@@ -28,14 +28,14 @@ def run_search(dict_file, postings_file, queries_file, results_file):
     perform searching on the given queries file and output the results to a file
     """
     print('running search on the queries...')
-    # This is an empty method
-    # Pls implement your code in below
+
     # Open files
     global pf
     df = open(dict_file, 'r')
     pf = open(postings_file, 'r')
     qf = open(queries_file, 'r')
     rf = open(results_file, 'w')
+
     # Load dictionary
     count = 0
     for word_str in df.readlines():
@@ -45,9 +45,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
         dict_index[entries[0]] = int(entries[2])
         count = count + 1
     # Perform searching
-    # for query in qf.readlines():
-    for query in ['a AND against', '(a OR again) AND against', 'and AND april', 'against AND NOT again']:
-        # 1,5,6; 1,5,6; 1,10; 9,10
+    for query in qf.readlines():
         tokens = parse(nltk.word_tokenize(query))
         i = 0
         while i < len(tokens):
@@ -89,19 +87,30 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                     tokens[i:] = tokens[(i + 1):]
                     i = i - 1
             i = i + 1
-        print(tokens[0])
-    # print(handle_and_word(['a', 'again']))
-    # print(handle_and_word2(['a', 'again']))
-    # print(search_single_word('again'))
-    # print(handle_and_list([[3,4,5,6,7,10,11],[2,3,4,10],[2,3,4,6,7,10,12],[4,10,12]]))
-    # print(handle_and_not_lists(list(range(1,40)),[]))
-    # print(handle_and(['a', 'against']))
-    # print(handle_and_list([[1,2,3],[1,2,3,4,5]]))
+        for doc_id in tokens[0]:
+            rf.write(num_to_str(doc_id))
+        rf.write("\n")
+
+    # Close files
     df.close()
     pf.close()
     qf.close()
     rf.close()
-    # print(parse(['Hello', 'AND', 'NOT', '(', 'Worlds', 'OR', 'WorDS', 'OR', 'Windows', 'AND', 'MAC', ')']))
+
+
+def num_to_str(n):
+    """
+    :param n: A number
+    :return: A string of exactly length 10 containing the number with white spaces at the back.
+    This makes sure that each docID takes exactly the same number of characters, making it easier
+    to locate the file pointer
+    """
+    s = str(n)
+    l = len(s)
+    while l < index_width:
+        s = s + " "
+        l = l + 1
+    return s
 
 
 def classify_operands(operands):
