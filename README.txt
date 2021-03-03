@@ -7,6 +7,10 @@ this assignment.
 
 == General Notes about this assignment ==
 
+Give an overview of your program, describe the important algorithms/steps
+in your program, and discuss your experiments in general.  A few paragraphs
+are usually sufficient.
+
 1. Indexing
 
 1.1 Normalized word format
@@ -21,8 +25,21 @@ that words connected by '/' are regarded as separate words correctly.
 
 Stop words are not removed.
 
+1.2 BSBI
 
-1.2 Output file format
+Blocked Sort_Based Indexing(BSBI) is used to make the indexing process scalable.
+The corpus is divided into blocks of files, each block contains 1000 files except
+for the last one.
+
+The inverted index is firstly constructed inside each block, kept as intermediate
+files. The intermediate files are then be merged together into one dictionary file
+and one postings file. The merging process is done recursively, postings are to be
+merged with the result of the previous merges. And when merging two posting files,
+two pointers are used to traverse through the two posting lists, which is similar as the
+AND operation's algorithm.
+
+
+1.3 Output file format
 
 After indexing, the resulting dictionary.txt file is a document such that
 each line contains one word in the normalized form, after which is a white
@@ -48,7 +65,7 @@ the product of document frequency of the word and the fixed document ID width
 plus one (the '\n' mark).
 
 
-1.3 Other notes
+1.4 Other notes
 
 For indexing, sent_tokenize function is not used because all that is needed is
 words, and we do not need to get the intermediate state of breaking the whole
