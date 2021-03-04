@@ -3,6 +3,7 @@ from nltk.stem.porter import *
 index_width = 6
 max_doc_id = 15000
 
+
 def normalize(src):
     """
     :param src: The original word

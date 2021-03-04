@@ -143,6 +143,10 @@ def handle_or(operands):
     res = handle_or_word(classified_operands['words'])
     lists = classified_operands['lists']
     lists.append(res)
+    for nw in classified_operands['nwords']:
+        lists.append(handle_not(nw[1]))
+    for nl in classified_operands['nlists']:
+        lists.append(handle_not(nl[1]))
     res = handle_or_list(lists)
     return res
 
