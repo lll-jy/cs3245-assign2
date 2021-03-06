@@ -1,22 +1,22 @@
 #!/usr/bin/python3
 # dictionary-of-documents: ~/nltk_data/corpora/reuters/training/
-import nltk
 import os
 import ssl
 import sys
 import getopt
 
-from shared import index_width, max_doc_id, postings_info_file, process_doc
+from shared import index_width, max_doc_id, process_doc
 
 # Global variables
 block_size = 1000
 
 
 def usage():
-    print("usage: " + sys.argv[0] + " -i directory-of-documents -d dictionary-file -p postings-file")
+    print("usage: " + sys.argv[0] +
+          " -i directory-of-documents -d dictionary-file -p postings-file -s document-sizes-file")
 
 
-def build_index(in_dir, out_dict, out_postings):
+def build_index(in_dir, out_dict, out_postings, out_sizes):
     """
     build index from documents stored in the input directory,
     then output the dictionary file and postings file
@@ -79,10 +79,10 @@ def build_index(in_dir, out_dict, out_postings):
 
     merge_block(block_count, out_dict, out_postings)
 
-    psf = open(postings_info_file, 'w')
+    sf = open(out_sizes, 'w')
     for file in postings_size:
-        psf.write(f"{file} {postings_size[file]}\n")
-    psf.close()
+        sf.write(f"{file} {postings_size[file]}\n")
+    sf.close()
 
 
 def merge_block(block_count, out_dict, out_postings):
@@ -226,10 +226,10 @@ def doc_tuple_str(tuple):
     return s
 
 
-input_directory = output_file_dictionary = output_file_postings = None
+input_directory = output_file_dictionary = output_file_postings = output_file_sizes = None
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 'i:d:p:')
+    opts, args = getopt.getopt(sys.argv[1:], 'i:d:p:s:')
 except getopt.GetoptError:
     usage()
     sys.exit(2)
@@ -241,11 +241,15 @@ for o, a in opts:
         output_file_dictionary = a
     elif o == '-p': # postings file
         output_file_postings = a
+    elif o == '-s': # sizes file
+        output_file_sizes = a
+        print(a)
     else:
         assert False, "unhandled option"
 
 
-if input_directory == None or output_file_postings == None or output_file_dictionary == None:
+if input_directory == None or output_file_postings == None \
+        or output_file_dictionary == None or output_file_sizes == None:
     usage()
     """
     try:
@@ -258,4 +262,4 @@ if input_directory == None or output_file_postings == None or output_file_dictio
     """
     sys.exit(2)
 
-build_index(input_directory, output_file_dictionary, output_file_postings)
+build_index(input_directory, output_file_dictionary, output_file_postings, output_file_sizes)

@@ -7,6 +7,10 @@ this assignment.
 
 == General Notes about this assignment ==
 
+** Change of command line processing (reason see 1.3):
+Indexing: python index.py -i directory-of-documents -d dictionary-file -p postings-file -s sizes-file
+Searching: python search.py -d dictionary-file -p postings-file -s sizes-file -q file-of-queries -o output-file-of-results
+
 1. Indexing
 
 1.1 Normalized word format (Remains the same as HW2)
@@ -59,11 +63,11 @@ stored in the dictionary file is hence easily calculated cumulatively from
 the product of document frequency of the word and the fixed document ID width
 plus one (the '\n' mark).
 
-An additional file named postings_summary.txt is generated during indexing,
-which keeps track of the length of each document. The format of this file
-is such that each line contains two number representing the document ID and
-length of the document respectively, separated by a white space, and each line
-is separated using a '\n'.
+An additional file of sizes is generated during indexing, which keeps track
+of the length of each document. The format of this file is such that each line
+contains two number representing the document ID and length of the document
+respectively, separated by a white space, and each line is separated using a
+'\n'.
 
 
 1.4 Other notes (Remains the same as HW2)
