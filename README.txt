@@ -45,20 +45,25 @@ of the line of the corresponding word in the postings file, namely, the
 pointer to the postings file. The words are sorted alphabetically.
 
 The resulting postings.txt file is a document such that each line is a list
-of document IDs that contains the word in the corresponding line of
-dictionary.txt, and sorted in ascending order. For easy access using pointer
-in a file using the in-built Python seek function, we purposely put some
-white spaces such that each document ID takes 6 characters long since the
-maximum of document ID in the training data has 5 digits. The docIDs are the
-name of the files. The files in the Reuters training set are not in
-consecutive indices, but we just assumed that there are some missing files
-and still uses the file name as the docID.
+of number pairs of document ID that contains the word in the corresponding
+line of dictionary.txt, and term frequency within the document, and the
+pairs are sorted in ascending order based on document ID. For easy access
+using pointer in a file using the in-built Python seek function, we purposely
+put some white spaces such that each tuple takes 12 characters long since the
+maximum of document ID in the training data has 5 digits, and the maximum
+term frequency is has {TODO: n} digits. The docIDs are the name of the files.
 
-By the fixed with of each document ID in the postings file and the size of
+By the fixed width of each document ID in the postings file and the size of
 each postings list in memory while indexing, the pointer to the postings file
 stored in the dictionary file is hence easily calculated cumulatively from
 the product of document frequency of the word and the fixed document ID width
 plus one (the '\n' mark).
+
+An additional file named postings_summary.txt is generated during indexing,
+which keeps track of the length of each document. The format of this file
+is such that each line contains two number representing the document ID and
+length of the document respectively, separated by a white space, and each line
+is separated using a '\n'.
 
 
 1.4 Other notes
