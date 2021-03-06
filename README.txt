@@ -63,11 +63,11 @@ stored in the dictionary file is hence easily calculated cumulatively from
 the product of document frequency of the word and the fixed document ID width
 plus one (the '\n' mark).
 
-An additional file of sizes is generated during indexing, which keeps track
-of the length of each document. The format of this file is such that each line
-contains two number representing the document ID and length of the document
-respectively, separated by a white space, and each line is separated using a
-'\n'.
+An additional file of lengths is generated during indexing, which keeps track
+of the length of vector of each document. The format of this file is such that
+each line contains two number representing the document ID and length of the
+vector of document respectively, separated by a white space, and each line is
+separated using a '\n'.
 
 
 1.4 Other notes (Remains the same as HW2)
@@ -128,7 +128,7 @@ search.py: required source code of searching
 shared.py: shared code for index.py and search.py
 dictionary.txt: generated dictionary using index.py with data in Reuters
 postings.txt: generated postings list using index.py with data in Reuters
-postings_summary.txt: generated size of each document using index.py with data Reuters
+lengths.txt: generated length of vector of each document using index.py with data Reuters
 README.txt: this file
 ESSAY.txt: answers to essay questions
 

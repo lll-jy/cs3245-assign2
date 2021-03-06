@@ -1,3 +1,5 @@
+import math
+
 from nltk.stem.porter import *
 import nltk
 
@@ -24,8 +26,12 @@ def normalize(src):
 
 
 def process_doc(content):
+    """
+    Process the content of a document
+    :param content: content string of a document (or query)
+    :return: dictionary with term frequency in this document, and the length of vector of the document
+    """
     doc_dict = {}
-    count_in_doc = 0
     words = nltk.word_tokenize(content)
     for w in words:
         ws = w.split('/')
@@ -35,5 +41,7 @@ def process_doc(content):
                 if word not in doc_dict:
                     doc_dict[word] = 0
                 doc_dict[word] += 1
-                count_in_doc += 1
-    return doc_dict, count_in_doc
+    acc = 0
+    for word in doc_dict:
+        acc += doc_dict[word] * doc_dict[word]
+    return doc_dict, math.sqrt(acc)

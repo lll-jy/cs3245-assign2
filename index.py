@@ -13,10 +13,10 @@ block_size = 1000
 
 def usage():
     print("usage: " + sys.argv[0] +
-          " -i directory-of-documents -d dictionary-file -p postings-file -s document-sizes-file")
+          " -i directory-of-documents -d dictionary-file -p postings-file -l document-lengths-file")
 
 
-def build_index(in_dir, out_dict, out_postings, out_sizes):
+def build_index(in_dir, out_dict, out_postings, out_lengths):
     """
     build index from documents stored in the input directory,
     then output the dictionary file and postings file
@@ -25,7 +25,7 @@ def build_index(in_dir, out_dict, out_postings, out_sizes):
     # Initializations
     dictionary = {}
     doc_freq = {}
-    postings_size = {}
+    doc_len = {}
 
     # Iterate through each file
     # Not directly using files.sorted() because this sorts
@@ -47,12 +47,9 @@ def build_index(in_dir, out_dict, out_postings, out_sizes):
         reader.close()
 
         file_count += 1
-        # start
         process_res = process_doc(content)
         doc_dict = process_res[0]
-        count_in_doc = process_res[1]
-
-        postings_size[file_index] = count_in_doc
+        doc_len[file_index] = process_res[1]
         for word in doc_dict:
             if word not in dictionary:
                 dictionary[word] = []
@@ -79,9 +76,9 @@ def build_index(in_dir, out_dict, out_postings, out_sizes):
 
     merge_block(block_count, out_dict, out_postings)
 
-    sf = open(out_sizes, 'w')
-    for file in postings_size:
-        sf.write(f"{file} {postings_size[file]}\n")
+    sf = open(out_lengths, 'w')
+    for file in doc_len:
+        sf.write(f"{file} {doc_len[file]}\n")
     sf.close()
 
 
@@ -226,10 +223,10 @@ def doc_tuple_str(tuple):
     return s
 
 
-input_directory = output_file_dictionary = output_file_postings = output_file_sizes = None
+input_directory = output_file_dictionary = output_file_postings = output_file_lengths = None
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 'i:d:p:s:')
+    opts, args = getopt.getopt(sys.argv[1:], 'i:d:p:l:')
 except getopt.GetoptError:
     usage()
     sys.exit(2)
@@ -241,15 +238,14 @@ for o, a in opts:
         output_file_dictionary = a
     elif o == '-p': # postings file
         output_file_postings = a
-    elif o == '-s': # sizes file
-        output_file_sizes = a
-        print(a)
+    elif o == '-l': # lengths file
+        output_file_lengths = a
     else:
         assert False, "unhandled option"
 
 
 if input_directory == None or output_file_postings == None \
-        or output_file_dictionary == None or output_file_sizes == None:
+        or output_file_dictionary == None or output_file_lengths == None:
     usage()
     """
     try:
@@ -262,4 +258,4 @@ if input_directory == None or output_file_postings == None \
     """
     sys.exit(2)
 
-build_index(input_directory, output_file_dictionary, output_file_postings, output_file_sizes)
+build_index(input_directory, output_file_dictionary, output_file_postings, output_file_lengths)
