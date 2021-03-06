@@ -43,5 +43,6 @@ def process_doc(content):
                 doc_dict[word] += 1
     acc = 0
     for word in doc_dict:
-        acc += doc_dict[word] * doc_dict[word]
+        tf = 1 + math.log(doc_dict[word])
+        acc += tf * tf
     return doc_dict, math.sqrt(acc)
