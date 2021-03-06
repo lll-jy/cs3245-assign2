@@ -1,7 +1,10 @@
 from nltk.stem.porter import *
 
-index_width = 6
+doc_id_width = 6
 max_doc_id = 15000
+frequency_width = 6
+index_width = doc_id_width + frequency_width
+postings_info_file = 'postings_summary.txt'
 
 
 def normalize(src):
