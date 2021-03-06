@@ -6,7 +6,7 @@ import ssl
 import sys
 import getopt
 
-from shared import normalize, index_width, max_doc_id, postings_info_file
+from shared import index_width, max_doc_id, postings_info_file, process_doc
 
 # Global variables
 block_size = 1000
@@ -47,18 +47,10 @@ def build_index(in_dir, out_dict, out_postings):
         reader.close()
 
         file_count += 1
-        doc_dict = {}
-        count_in_doc = 0
-        words = nltk.word_tokenize(content)
-        for w in words:
-            ws = w.split('/')
-            for word in ws:
-                word = normalize(word)
-                if not word == "":
-                    if word not in doc_dict:
-                        doc_dict[word] = 0
-                    doc_dict[word] += 1
-                    count_in_doc += 1
+        # start
+        process_res = process_doc(content)
+        doc_dict = process_res[0]
+        count_in_doc = process_res[1]
 
         postings_size[file_index] = count_in_doc
         for word in doc_dict:
