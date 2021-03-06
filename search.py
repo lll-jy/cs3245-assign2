@@ -51,7 +51,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
         if not line:
             break
         entries = line[:-1].strip().split(' ')
-        postings_size[int(entries[0])] = int(entries[1])
+        postings_size[int(entries[0])] = float(entries[1])
     # Perform searching
     queries = qf.readlines()
     for query in queries:

@@ -25,7 +25,7 @@ def build_index(in_dir, out_dict, out_postings):
     # Initializations
     dictionary = {}
     doc_freq = {}
-    postings_size = {}
+    doc_len = {}
 
     # Iterate through each file
     # Not directly using files.sorted() because this sorts
@@ -47,12 +47,9 @@ def build_index(in_dir, out_dict, out_postings):
         reader.close()
 
         file_count += 1
-        # start
         process_res = process_doc(content)
         doc_dict = process_res[0]
-        count_in_doc = process_res[1]
-
-        postings_size[file_index] = count_in_doc
+        doc_len[file_index] = process_res[1]
         for word in doc_dict:
             if word not in dictionary:
                 dictionary[word] = []
@@ -80,8 +77,8 @@ def build_index(in_dir, out_dict, out_postings):
     merge_block(block_count, out_dict, out_postings)
 
     psf = open(postings_info_file, 'w')
-    for file in postings_size:
-        psf.write(f"{file} {postings_size[file]}\n")
+    for file in doc_len:
+        psf.write(f"{file} {doc_len[file]}\n")
     psf.close()
 
 
