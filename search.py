@@ -255,6 +255,8 @@ def handle_and_not_lists(ls, lists):
 
 
 def handle_and_not_words(ls, words):
+    if len(words) > 0 and words[0] not in dictionary:
+        return ls;
     return handle_and_not_shared(ls, words, get_doc_id, lambda i: words[i],
                                  lambda i: dictionary[words[i]])
 
@@ -488,6 +490,8 @@ def get_inv_doc_id(word, count):
     :param count: the number of documents already processed, i.e. the pointer position
     :return: a tuple (-docID at the position, word)
     """
+    if word not in dictionary:
+        return 0, word
     pf.seek(dict_index[word])
     pf.seek(dict_index[word] + count * index_width)
     s = pf.read(index_width)
