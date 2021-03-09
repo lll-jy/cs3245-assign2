@@ -255,7 +255,7 @@ def handle_and_not_lists(ls, lists):
 
 
 def handle_and_not_words(ls, words):
-    filtered_words = filter(lambda w: w in dictionary, words)
+    filtered_words = list(filter(lambda w: w in dictionary, words))
     return handle_and_not_shared(ls, filtered_words, get_doc_id, lambda i: words[i],
                                  lambda i: dictionary[words[i]])
 
