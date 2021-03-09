@@ -255,7 +255,8 @@ def handle_and_not_lists(ls, lists):
 
 
 def handle_and_not_words(ls, words):
-    return handle_and_not_shared(ls, words, get_doc_id, lambda i: words[i],
+    filtered_words = filter(lambda w: w in dictionary, words)
+    return handle_and_not_shared(ls, filtered_words, get_doc_id, lambda i: words[i],
                                  lambda i: dictionary[words[i]])
 
 
@@ -460,6 +461,8 @@ def search_single_word(word):
     :param word: a normalized single word to search in dictionary
     :return: the list of docID containing the word
     """
+    if word not in dictionary:
+        return []
     res = []
     pointer = 0
     doc_id = get_inv_doc_id(word, pointer)
