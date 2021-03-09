@@ -84,7 +84,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                     i = i - 1
             i = i + 1
         for doc_id in tokens[0]:
-            rf.write(num_to_str(doc_id))
+            rf.write(str(doc_id) + " ")
         rf.write("\n")
 
     # Close files
