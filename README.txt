@@ -42,6 +42,7 @@ put some white spaces such that each tuple takes 8 characters long since the
 maximum of document ID in the training data has 5 digits, and the maximum
 term frequency has 2 digits.
 
+
 By the fixed width of each document ID in the postings file and the size of
 each postings list in memory while indexing, the pointer to the postings file
 stored in the dictionary file is hence easily calculated cumulatively from
