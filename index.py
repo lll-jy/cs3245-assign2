@@ -51,7 +51,6 @@ def build_index(in_dir, out_dict, out_postings):
             dictionary[word].append((file_index, doc_dict[word]))
             doc_freq[word] += 1
 
-
     invert(dictionary, doc_freq, out_dict, out_postings)
 
 
@@ -67,7 +66,7 @@ def invert(dictionary, doc_freq, dict_file, post_file):
     :param dictionary: a dictionary of lists of words' corresponding doc_id and term frequency
     :param doc_freq: the document frequency of each word
     :param dict_file: the output file for storing the dictionary of the words
-    :param post_file: the output file for storing the postings of the words 
+    :param post_file: the output file for storing the postings of the words
     """
     acc_pointer = 0
     dict_writer = open(dict_file, 'w')
