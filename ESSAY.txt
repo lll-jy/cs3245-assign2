@@ -1,63 +1,28 @@
-1. You will observe that a large portion of the terms in the dictionary are numbers.
-However, we normally do not use numbers as query terms to search. Do you think it is
-a good idea to remove these number entries from the dictionary and the postings lists?
-Can you propose methods to normalize these numbers? How many percentage of reduction
-in disk storage do you observe after removing/normalizing these numbers?
+1. In this assignment, we didn't ask you to support phrasal queries, which is a
+feature that is typically supported in web search engines. Describe how you would
+support phrasal search in conjunction with the VSM model. A sketch of the algorithm
+is sufficient.
 
 
-In our implementation, numbers are all removed. In general, this will not affect
-effectiveness of the searching because they are usually not used as query terms. In
-addition, pure number terms may unnecessarily blow up the size of the dictionary
-since each number would be a different word. Moreover, appearance of some numbers
-as part of a word may obstruct stemming of the word correctly. For instance, if
-numbers are preserved, a search of 'Python' may not be able to match any mention
-of 'Python3', which is not desired. However, on the other hand, simply removing
-the numbers may make the search of 'Python3' equivalent to 'Python', which may also
-not something desired. Also, if the user insists to use number terms as some numbers
-may have special meanings, for example, the user forgets the term Euler number but
-he/she remembers the value of approximately 2.718, and he/she wants to know the
-name of the number, the search will fail because search of number is not allowed.
-
-The size of dictionary.txt of our implementation is 397KB on disk, and the size of
-our postings.txt is 3.1MB on disk. A test run to include all numbers in regex gives
-the dictionary.txt size of 532KB on disk, and the postings.txt size of 3.4MB on disk.
-Removing all numbers reduces the disk storage by about 10% which is quite a
-significant number. Hence, this may indicate that it makes more sense not to preserve
-all numbers.
-
-However, since simple removal may give rise to problems as mentioned before, do some
-normalization may be a better solution to deal with numbers. A possible way to
-normalize numbers that we propose is as follows:
-    1. First of all, the regex should be made to accept numbers and decimal points.
-    2. If this is a single number, and it appears quite frequently, say, has the
-       document frequency over a certain number/proportion, or higher than a certain
-       proportion of all words in dictionary, then this number should be considered
-       as a dictionary term.
-    3. If the number appears as a part of a word, it is usually be either a prefix
-       or suffix, so we may create some Biword-like structure to save the words,
-       for example, 'Python3' is saved as ('Python', 3), and a search of 'Python' and
-       'Python3' will both be able to target occurrences of 'Python3'.
+Answer.
 
 
 
-2. What do you think will happen if we remove stop words from the dictionary and
-postings file? How does it affect the searching phase?
+2. Describe how your search engine reacts to long documents and long queries as compared
+to short documents and queries. Is the normalization you use sufficient to address the
+problems (see Section 6.4.4 for a hint)? In your judgement, is the Itc.Inc scheme (n.b.,
+not the ranking scheme you were asked to implement) sufficient for retrieving documents
+from the Reuters-21578 collection?
 
 
-The size of dictionary will reduce, and the size of postings will reduce significantly.
-Removing stop words can save a lot of space. Since stop words are also usually used
-as a search term, removing them will not affect the searching result.
-
-However, searches containing stop words will thus become impossible if all stop words
-are removed. And if users insist to search with stop words, which may have some special
-meanings, the search will fail.
+Answer.
 
 
 
-3. The NLTK tokenizer may not correctly tokenize all terms. What do you observe
-from the resulting terms produced by sent_tokenize() and word_tokenize()? Can you
-propose rules to further refine these results?
+3. Do you think zone or field parametric indices would be useful for practical search
+in the Reuters collection? Note: the Reuters collection does have metadata for each
+article but the quality of the metadata is not uniform, nor are the metadata
+classifications uniformly applied (some documents have it, some don't).
 
 
-As mentioned in the README file, word_tokenize() does not handle with '/' correctly,
-to which a solution is provided in our implementation.
+Answer.

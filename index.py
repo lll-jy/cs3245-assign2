@@ -6,8 +6,7 @@ import ssl
 import sys
 import getopt
 
-from nltk.stem.porter import *
-from shared import normalize, index_width, max_doc_id
+from shared import index_width, max_doc_id, postings_info_file, process_doc
 
 # Global variables
 block_size = 1000
@@ -26,6 +25,7 @@ def build_index(in_dir, out_dict, out_postings):
     # Initializations
     dictionary = {}
     doc_freq = {}
+    doc_len = {}
 
     # Iterate through each file
     # Not directly using files.sorted() because this sorts
@@ -47,20 +47,14 @@ def build_index(in_dir, out_dict, out_postings):
         reader.close()
 
         file_count += 1
-        words_in_doc = []
-        words = nltk.word_tokenize(content)
-        for w in words:
-            ws = w.split('/')
-            for word in ws:
-                word = normalize(word)
-                if not word == "" and word not in words_in_doc:
-                    words_in_doc.append(word)
-
-        for word in words_in_doc:
+        process_res = process_doc(content)
+        doc_dict = process_res[0]
+        doc_len[file_index] = process_res[1]
+        for word in doc_dict:
             if word not in dictionary:
                 dictionary[word] = []
                 doc_freq[word] = 0
-            dictionary[word].append(file_index)
+            dictionary[word].append((file_index, doc_dict[word]))
             doc_freq[word] += 1
 
         # Divide the files into blocks, each block with block_size files
@@ -81,6 +75,11 @@ def build_index(in_dir, out_dict, out_postings):
         bsbi_invert(dictionary, doc_freq, temp_dict_path, temp_posting_path)
 
     merge_block(block_count, out_dict, out_postings)
+
+    psf = open(postings_info_file, 'w')
+    for file in doc_len:
+        psf.write(f"{file} {doc_len[file]}\n")
+    psf.close()
 
 
 def merge_block(block_count, out_dict, out_postings):
@@ -204,20 +203,19 @@ def bsbi_invert(dictionary, doc_freq, dict_file, post_file):
         dict_writer.write(f"{word} {str(doc_freq[word])} {acc_pointer}\n")
         acc_pointer += len(dictionary[word]) * index_width + 1
         for doc in dictionary[word]:
-            post_writer.write(num_to_str(doc))
+            post_writer.write(doc_tuple_str(doc))
         post_writer.write("\n")
     dict_writer.close()
     post_writer.close()
 
 
-def num_to_str(n):
+def doc_tuple_str(tuple):
     """
-    :param n: A number
-    :return: A string of exactly length 10 containing the number with white spaces at the back.
-    This makes sure that each docID takes exactly the same number of characters, making it easier
-    to locate the file pointer
+    :param tuple: A tuple of (docID, term frequency)
+    :return: A string of fixed length containing the white spaces at the back containing
+    information in the tuple.
     """
-    s = str(n)
+    s = str(f"{tuple[0]} {tuple[1]}")
     l = len(s)
     while l < index_width:
         s = s + " "
@@ -242,6 +240,7 @@ for o, a in opts:
         output_file_postings = a
     else:
         assert False, "unhandled option"
+
 
 if input_directory == None or output_file_postings == None or output_file_dictionary == None:
     usage()
