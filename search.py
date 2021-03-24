@@ -84,7 +84,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
                     i = i - 1
             i = i + 1
         for doc_id in tokens[0]:
-            rf.write(num_to_str(doc_id))
+            rf.write(str(doc_id) + " ")
         rf.write("\n")
 
     # Close files
@@ -255,7 +255,7 @@ def handle_and_not_lists(ls, lists):
 
 
 def handle_and_not_words(ls, words):
-    filtered_words = filter(lambda w: w in dictionary, words)
+    filtered_words = list(filter(lambda w: w in dictionary, words))
     return handle_and_not_shared(ls, filtered_words, get_doc_id, lambda i: words[i],
                                  lambda i: dictionary[words[i]])
 
