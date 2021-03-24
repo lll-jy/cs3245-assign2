@@ -21,19 +21,8 @@ that words connected by '/' are regarded as separate words correctly.
 
 Stop words are not removed.
 
-1.2 BSBI TODO: update
-
-Blocked Sort_Based Indexing(BSBI) is used to make the indexing process scalable.
-The corpus is divided into blocks of files, each block contains 1000 files except
-for the last one.
-
-The inverted index is firstly constructed inside each block, kept as intermediate
-files. The intermediate files are then be merged together into one dictionary file
-and one postings file. The merging process is done recursively, postings are to be
-merged with the result of the previous merges. And when merging two posting files,
-two pointers are used to traverse through the two posting lists, which is similar as the
-AND operation's algorithm.
-
+1.2 Indexing method
+For simplicity, scalable index construction techniques(BSBI, SPIMI) are not used.
 
 1.3 Output file format (Minor updates compared to HW2)
 
@@ -49,9 +38,10 @@ of number pairs of document ID that contains the word in the corresponding
 line of dictionary.txt, and term frequency within the document, and the
 pairs are sorted in ascending order based on document ID. For easy access
 using pointer in a file using the in-built Python seek function, we purposely
-put some white spaces such that each tuple takes 12 characters long since the
+put some white spaces such that each tuple takes 8 characters long since the
 maximum of document ID in the training data has 5 digits, and the maximum
-term frequency is has {TODO: n} digits. The docIDs are the name of the files.
+term frequency has 2 digits.
+
 
 By the fixed width of each document ID in the postings file and the size of
 each postings list in memory while indexing, the pointer to the postings file
