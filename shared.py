@@ -39,12 +39,12 @@ def process_doc(content):
         ws = w.split('/')
         for word in ws:
             word = normalize(word)
-            if not word == "":
+            if word != "":
                 if word not in doc_dict:
                     doc_dict[word] = 0
                 doc_dict[word] += 1
     acc = 0
     for word in doc_dict:
-        tf = 1 + math.log(doc_dict[word])
+        tf = 1 + math.log(doc_dict[word], 10)
         acc += tf * tf
     return doc_dict, math.sqrt(acc)

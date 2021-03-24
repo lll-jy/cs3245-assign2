@@ -80,7 +80,7 @@ def weight_query(doc_freq, term_freq):
     :param term_freq: tf = term frequency
     :return: the weight calculated using the formula w = (1 + log(tf)) * log(N/df)
     """
-    return weight_doc(term_freq) * math.log(len(postings_size) / doc_freq)
+    return weight_doc(term_freq) * math.log(len(postings_size) / doc_freq, 10)
 
 
 def weight_doc(term_freq):
@@ -122,7 +122,7 @@ def process_free_query(query):
             if info_str[0] == '\n':
                 break
             pair = tuple(map(lambda x: int(x), info_str.strip().split(' ')))
-            scores[pair[0]] += weight_doc(pair[1])
+            scores[pair[0]] += weight_doc(pair[1]) * qw
             file_pointer += index_width
             file_count += 1
     for doc in scores:
