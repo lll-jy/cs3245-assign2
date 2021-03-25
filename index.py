@@ -1,18 +1,18 @@
 #!/usr/bin/python3
 # dictionary-of-documents: ~/nltk_data/corpora/reuters/training/
-import nltk
 import os
 import ssl
 import sys
 import getopt
 
-from shared import index_width, max_doc_id, postings_info_file, process_doc
+from shared import index_width, max_doc_id, process_doc
 
 def usage():
-    print("usage: " + sys.argv[0] + " -i directory-of-documents -d dictionary-file -p postings-file")
+    print("usage: " + sys.argv[0] +
+          " -i directory-of-documents -d dictionary-file -p postings-file -l document-lengths-file")
 
 
-def build_index(in_dir, out_dict, out_postings):
+def build_index(in_dir, out_dict, out_postings, out_lengths):
     """
     build index from documents stored in the input directory,
     then output the dictionary file and postings file
@@ -53,13 +53,12 @@ def build_index(in_dir, out_dict, out_postings):
 
     invert(dictionary, doc_freq, out_dict, out_postings)
 
-
     psf = open(postings_info_file, 'w')
     for file in doc_len:
         psf.write(f"{file} {doc_len[file]}\n")
     psf.close()
 
-
+    
 def invert(dictionary, doc_freq, dict_file, post_file):
     """
     Construct inverted index for all the documents.
@@ -95,10 +94,10 @@ def doc_tuple_str(tuple):
     return s
 
 
-input_directory = output_file_dictionary = output_file_postings = None
+input_directory = output_file_dictionary = output_file_postings = output_file_lengths = None
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 'i:d:p:')
+    opts, args = getopt.getopt(sys.argv[1:], 'i:d:p:l:')
 except getopt.GetoptError:
     usage()
     sys.exit(2)
@@ -110,11 +109,14 @@ for o, a in opts:
         output_file_dictionary = a
     elif o == '-p': # postings file
         output_file_postings = a
+    elif o == '-l': # lengths file
+        output_file_lengths = a
     else:
         assert False, "unhandled option"
 
 
-if input_directory == None or output_file_postings == None or output_file_dictionary == None:
+if input_directory == None or output_file_postings == None \
+        or output_file_dictionary == None or output_file_lengths == None:
     usage()
     """
     try:
@@ -127,4 +129,4 @@ if input_directory == None or output_file_postings == None or output_file_dictio
     """
     sys.exit(2)
 
-build_index(input_directory, output_file_dictionary, output_file_postings)
+build_index(input_directory, output_file_dictionary, output_file_postings, output_file_lengths)
