@@ -51,7 +51,7 @@ def run_search(dict_file, postings_file, lengths_file, queries_file, results_fil
         if not line:
             break
         entries = line[:-1].strip().split(' ')
-        postings_size[int(entries[0])] = float(entries[1])
+        doc_len[int(entries[0])] = float(entries[1])
     # Perform searching
     queries = qf.readlines()
     for query in queries:
@@ -80,7 +80,7 @@ def weight_query(doc_freq, term_freq):
     :param term_freq: tf = term frequency
     :return: the weight calculated using the formula w = (1 + log(tf)) * log(N/df)
     """
-    return weight_doc(term_freq) * math.log(len(postings_size) / doc_freq, 10)
+    return weight_doc(term_freq) * math.log(len(doc_len) / doc_freq, 10)
 
 
 def weight_doc(term_freq):
