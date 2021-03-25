@@ -1,28 +1,44 @@
 1. In this assignment, we didn't ask you to support phrasal queries, which is a
-feature that is typically supported in web search engines. Describe how you would
-support phrasal search in conjunction with the VSM model. A sketch of the algorithm
-is sufficient.
+feature that is typically supported in web search engines. Describe how you would support phrasal search in conjunction
+with the VSM model. A sketch of the algorithm is sufficient.
 
 
 Answer.
+We can utilize the similar methods for phrase queries as in boolean retrieval.
+
+One of the methods can be bi-word indexing. We can generate the posting lists for both single words and bi-word phrases,
+and calculate the weights for each of them in every document. But this will definitely cost more time and space.
+And it will cost more if we want to handle phrases more than 2 words.
 
 
-
-2. Describe how your search engine reacts to long documents and long queries as compared
-to short documents and queries. Is the normalization you use sufficient to address the
-problems (see Section 6.4.4 for a hint)? In your judgement, is the Itc.Inc scheme (n.b.,
-not the ranking scheme you were asked to implement) sufficient for retrieving documents
-from the Reuters-21578 collection?
-
-
-Answer.
-
-
-
-3. Do you think zone or field parametric indices would be useful for practical search
-in the Reuters collection? Note: the Reuters collection does have metadata for each
-article but the quality of the metadata is not uniform, nor are the metadata
-classifications uniformly applied (some documents have it, some don't).
+2. Describe how your search engine reacts to long documents and long queries as compared to short documents and queries.
+ Is the normalization you use sufficient to address the problems (see Section 6.4.4 for a hint)? In your judgement,
+ is the Itc.Inc scheme (n.b., not the ranking scheme you were asked to implement) sufficient for retrieving documents
+ from the Reuters-21578 collection?
 
 
 Answer.
+I found the relevance of searching results of short queries is higher. When searching contains less words, the chances
+ are higher that every words appears at least once in the result doc. However, for long queries, many of the words in
+ the queries do not appear in the resulting docs.
+
+A better normalization might help to resolve this problem. According to 6.4.4, the normalization by Euclidean distance
+ might hide some information for documents with different length.
+
+I think both Itc.Inc and Inc.Itc are sufficient for this collection. What we want to find is just the relative ranking
+of similarities of each doc with the query. Since every document is evaluated under the same scheme, and both Scheme are
+logically correct, there will not be much differences in the relative rankings.
+
+
+
+
+
+
+3. Do you think zone or field parametric indices would be useful for practical search in the Reuters collection?
+Note: the Reuters collection does have metadata for each article but the quality of the metadata is not uniform,
+nor are the metadata classifications uniformly applied (some documents have it, some don't).
+
+
+Answer.
+They will be useful. For example, we can make use of the titles of each documents to make the searching easier and
+more precise.
