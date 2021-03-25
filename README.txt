@@ -7,6 +7,10 @@ this assignment.
 
 == General Notes about this assignment ==
 
+** Change of command line processing (reason see 1.3):
+Indexing: python index.py -i directory-of-documents -d dictionary-file -p postings-file -s sizes-file
+Searching: python search.py -d dictionary-file -p postings-file -s sizes-file -q file-of-queries -o output-file-of-results
+
 1. Indexing
 
 1.1 Normalized word format (Remains the same as HW2)
