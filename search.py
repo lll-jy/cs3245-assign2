@@ -5,23 +5,23 @@ from heapq import *
 
 import sys
 import getopt
-from shared import index_width, process_doc, postings_info_file
+from shared import index_width, process_doc
 
 # Global variables, dictionary and postings
 dictionary = {}
 dict_index = {}
-postings_size = {}
-doc_vectors = {}
+doc_len = {}
 pf = None
 search_limit = 10
 # search_limit = 4
 
 
 def usage():
-    print("usage: " + sys.argv[0] + " -d dictionary-file -p postings-file -q file-of-queries -o output-file-of-results")
+    print("usage: " + sys.argv[0] +
+          " -d dictionary-file -p postings-file -l lengths-file -q file-of-queries -o output-file-of-results")
 
 
-def run_search(dict_file, postings_file, queries_file, results_file):
+def run_search(dict_file, postings_file, lengths_file, queries_file, results_file):
     """
     using the given dictionary file and postings file,
     perform searching on the given queries file and output the results to a file
@@ -34,7 +34,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
     pf = open(postings_file, 'r')
     qf = open(queries_file, 'r')
     rf = open(results_file, 'w')
-    psf = open(postings_info_file, 'r')
+    lf = open(lengths_file, 'r')
 
     # Load dictionary
     count = 0
@@ -45,9 +45,9 @@ def run_search(dict_file, postings_file, queries_file, results_file):
         dictionary[entries[0]] = int(entries[1])
         dict_index[entries[0]] = int(entries[2])
         count = count + 1
-    # Load postings size
+    # Load vector lengths
     while True:
-        line = psf.readline()
+        line = lf.readline()
         if not line:
             break
         entries = line[:-1].strip().split(' ')
@@ -70,7 +70,7 @@ def run_search(dict_file, postings_file, queries_file, results_file):
     pf.close()
     qf.close()
     rf.close()
-    psf.close()
+    lf.close()
 
 
 def weight_query(doc_freq, term_freq):
@@ -104,7 +104,7 @@ def process_free_query(query):
     query_info = process_doc(query)
     # Initialize scores of each document to 0
     scores = {}
-    for doc in postings_size:
+    for doc in doc_len:
         scores[doc] = 0
     for word in query_info[0]:
         if word not in dictionary:
@@ -126,7 +126,7 @@ def process_free_query(query):
             file_pointer += index_width
             file_count += 1
     for doc in scores:
-        scores[doc] /= postings_size[doc]
+        scores[doc] /= doc_len[doc]
         if len(res) < search_limit:
             heappush(res, (scores[doc], -doc))
         else:
@@ -142,20 +142,22 @@ def process_free_query(query):
     return res_docs
 
 
-dictionary_file = postings_file = file_of_queries = output_file_of_results = None
+dictionary_file = postings_file = lengths_file = file_of_queries = file_of_output = None
 
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 'd:p:q:o:')
+    opts, args = getopt.getopt(sys.argv[1:], 'd:p:l:q:o:')
 except getopt.GetoptError:
     usage()
     sys.exit(2)
 
 for o, a in opts:
     if o == '-d':
-        dictionary_file  = a
+        dictionary_file = a
     elif o == '-p':
         postings_file = a
+    elif o == '-l':
+        lengths_file = a
     elif o == '-q':
         file_of_queries = a
     elif o == '-o':
@@ -164,8 +166,9 @@ for o, a in opts:
         assert False, "unhandled option"
 
 
-if dictionary_file == None or postings_file == None or file_of_queries == None or file_of_output == None :
+if dictionary_file == None or postings_file == None or lengths_file == None \
+        or file_of_queries == None or file_of_output == None:
     usage()
     sys.exit(2)
 
-run_search(dictionary_file, postings_file, file_of_queries, file_of_output)
+run_search(dictionary_file, postings_file, lengths_file, file_of_queries, file_of_output)
