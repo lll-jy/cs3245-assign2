@@ -18,3 +18,6 @@ def normalize(src):
     stemmer = PorterStemmer()
     word = stemmer.stem(word)
     return word
+
+
+#testtest
